@@ -43,14 +43,14 @@ Y_2 = Y(N_samples_train+1:end, :);
 
 %% Linear regression
 [X_train, moy_x, var_x] = normalize(X_1);
-[Y_train, moy_y, var_y] = normalize(Y_1);
+[Y_train, moy_y] = center(Y_1);
 
 B = regress(Y_train, X_train);
 Y_est = X_train*B;
 
 % Predictions for the rest of the data
-% X_test = normalizetest(X_2, moy_x, var_x);
-% Y_predicted = X_2*B;
+X_test = normalizetest(X_2, moy_x, var_x);
+Y_predicted = X_test*B + moy_y;
 
 RSS = sum((Y_train-Y_est).^2);
 MSE = mean((Y_train-Y_est).^2);
