@@ -45,7 +45,7 @@ Y_2 = Y(N_samples_train+1:end, :);
 [X_train, moy_x, var_x] = normalize(X_1);
 [Y_train, moy_y] = center(Y_1);
 
-B = regress(Y_train, X_train);
+B = regress(Y_1, X_train);
 Y_est = X_train*B;
 
 % Predictions for the rest of the data
@@ -61,21 +61,27 @@ disp('LINEAR REGRESSION RESULTS');
 disp(['MSE: ' num2str(MSE)]);
 disp(['R2: ' num2str(R2)]);
 
+% Considering there are more parameters than observations
+% Linear regression is only overfitting the training data.
+% We cannot use it at all to predict for the test data.
+
+return
+
 %% Lasso regression
-% CV_folds = 10;
-% CV_indexes = crossvalind('Kfold', N_samples_train, CV_folds);
-% MSE_array = zeros(N_samples_train, CV_folds);
-% for i=1:CV_folds
-%     Y_tr = Y_1(CV_indexes~=i); Y_te = Y_1(CV_indexes==i);
-%     X_tr = X_1(CV_indexes~=i,:); X_te = X_1(CV_indexes==i,:);
-%     
-%     [X_train, moy_x, var_x] = normalize(X_tr);
-%     [Y_train, moy_y] = center(Y_tr);
-%     X_test = normalizetest(X_te, moy_x, var_x);
-%     Y_test = Y_te - moy_y;
-%     
-%     B = regress(Y_train, X_train);
-%     Y_est = X_test*B;
-%     MSE_array(:, i) = sum((Y_est - Y_test).^2);
-% end
-% plot(1:CV_folds, MSE_array);
+CV_folds = 10;
+CV_indexes = crossvalind('Kfold', N_samples_train, CV_folds);
+MSE_array = zeros(N_samples_train, CV_folds);
+for i=1:CV_folds
+    Y_tr = Y_1(CV_indexes~=i); Y_te = Y_1(CV_indexes==i);
+    X_tr = X_1(CV_indexes~=i,:); X_te = X_1(CV_indexes==i,:);
+    
+    [X_train, moy_x, var_x] = normalize(X_tr);
+    [Y_train, moy_y] = center(Y_tr);
+    X_test = normalizetest(X_te, moy_x, var_x);
+    Y_test = Y_te - moy_y;
+    
+    B = regress(Y_train, X_train);
+    Y_est = X_test*B;
+    MSE_array(:, i) = sum((Y_est - Y_test).^2);
+end
+plot(1:CV_folds, MSE_array);
