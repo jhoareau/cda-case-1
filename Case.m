@@ -85,3 +85,34 @@ for i=1:CV_folds
     MSE_array(:, i) = sum((Y_est - Y_test).^2);
 end
 plot(1:CV_folds, MSE_array);
+
+%% ElasticNet
+
+CV_folds = 10;
+CV_indexes = crossvalind('Kfold', N_samples_train, CV_folds);
+
+alpha_list = 0.0001:0.1:1;
+N_alpha = size(alpha_list, 2);
+lambda_list = logspace(-5, 0, 100);
+N_lambda = size(lambda_list, 2);
+MSE = zeros(CV_folds,N_alpha,N_lambda);
+Models = zeros(102,N_alpha,N_lambda);
+for i=1:CV_folds
+    i_alpha=1;
+    Y_tr = Y_1(CV_indexes~=i); Y_te = Y_1(CV_indexes==i);
+    X_tr = X_1(CV_indexes~=i,:); X_te = X_1(CV_indexes==i,:);
+    
+    for alpha=alpha_list
+        i_lambda=1;
+        for lambda=lambda_list
+            [B,FitInfo] = lasso(X_tr, Y_tr, 'Alpha', alpha, 'Lambda', lambda);
+            MSE(i,i_alpha,i_lambda) = MSE(i,i_alpha,i_lambda) + FitInfo.MSE;
+            Models(:,i_alpha,i_lambda) = B;
+            i_lambda=i_lambda+1;
+        end
+        i_alpha=i_alpha+1;
+    end
+end
+
+MSE = reshape(mean(MSE,1), [size(MSE, 2) size(MSE, 3)]);
+heatmap(MSE, lambda_list, alpha_list, '%0.3e', 'Colorbar', true, 'UseLogColormap', true);
