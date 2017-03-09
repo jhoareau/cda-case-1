@@ -18,6 +18,7 @@ X = [ X, X100_new, X101, X102 ];
 Y = table2array(data(:, 1));
 
 N_columns = size(X, 2);
+clearvars X100 X100_new X101 X102
 
 %% Boxplotting the data
 boxplot(X(:, 1:end-3), 1:N_columns-3);
