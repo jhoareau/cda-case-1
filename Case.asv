@@ -93,17 +93,17 @@ for i=1:CV_folds
     for j=1:100
         Beta = (Xtrain'*Xtrain+lambda(j)*eye(102)) \ Xtrain'*Ytrain;
         MSE(i,j)= mean((Ytest-Xtest*Beta).^2); %MSE lambda
+        SSE(i,j)= sum((Ytest-Xtest*Beta).^2);
     end
 end
-
-meanMSE = mean(MSE);
+MSE2 = sum(SSE,1)/N;
+meanMSE = mean(MSE); %
 [tmp j_opt] = min(meanMSE);
 Lambda_CV = lambda(j_opt);
 hold on
 semilogx([Lambda_CV Lambda_CV],[-10 10],'--r')
 hold off
 disp(['CV lambda = ',num2str(Lambda_CV)]);
-disp(['MSE lambda = ',num2str(tmp)]);
 
 seMSE = std(MSE)/sqrt(CV_folds);
 
@@ -114,7 +114,6 @@ hold on
 semilogx([Lambda_CV_1StdErrRule Lambda_CV_1StdErrRule],[-10 10],'--b')
 hold off
 disp(['CV lambda 1-std-rule = ',num2str(Lambda_CV_1StdErrRule)]);
-disp(['MSE lambda 1-std-rule = ',num2str(meanMSE(j))]);
 %disp(seMSE)
 
 %% Lasso regression: LARS
@@ -160,10 +159,10 @@ CV_indexes = crossvalind('Kfold', N_samples_train, CV_folds);
 
 alpha_list = 0.0001:0.1:1;
 N_alpha = size(alpha_list, 2);
-lambda_list = logspace(-4, 3, 100);
+lambda_list = logspace(-5, 0, 100);
 N_lambda = size(lambda_list, 2);
 MSE = zeros(CV_folds,N_alpha,N_lambda);
-Models = zeros(size(X,2),N_alpha,N_lambda);
+Models = zeros(102,N_alpha,N_lambda);
 for i=1:CV_folds
     i_alpha=1;
     Y_tr = Y_1(CV_indexes~=i); Y_te = Y_1(CV_indexes==i);
@@ -173,12 +172,13 @@ for i=1:CV_folds
         i_lambda=1;
         for lambda=lambda_list
             [B,FitInfo] = lasso(X_tr, Y_tr, 'Alpha', alpha, 'Lambda', lambda);
-            YhatTst = X_te*B;
-            MSE(i,i_alpha,i_lambda) = MSE(i,i_alpha,i_lambda) + (YhatTst-Y_te)'*(YhatTst-Y_te)/length(Y_te);
+            MSE(i,i_alpha,i_lambda) = MSE(i,i_alpha,i_lambda) + FitInfo.MSE;
+            Models(:,i_alpha,i_lambda) = B;
             i_lambda=i_lambda+1;
         end
         i_alpha=i_alpha+1;
     end
 end
 
-MSE = reshape(mean(MSE,1), [size(MSE, 2) size(MSE, 3)])/sqrt(CV_folds);
+MSE = reshape(mean(MSE,1), [size(MSE, 2) size(MSE, 3)]);
+heatmap(MSE, lambda_list, alpha_list, '%0.3e', 'Colorbar', true, 'UseLogColormap', true);
